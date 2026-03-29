@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChapaVote — Acesso</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde: #00C271;
+      --verde-escuro: #009958;
+      --verde-glow: rgba(0, 194, 113, 0.18);
+      --bg: #080E14;
+      --card: #0E1A24;
+      --borda: rgba(0, 194, 113, 0.15);
+      --texto: #E8F0EC;
+      --muted: #6B8A7A;
+      --erro: #FF5C5C;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--texto);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Fundo animado */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 80%, rgba(0,194,113,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 80% 20%, rgba(0,194,113,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Grade de pontos */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(0,194,113,0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo */
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border-radius: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px var(--verde-glow);
+    }
+
+    .logo-mark svg {
+      width: 34px;
+      height: 34px;
+      fill: white;
+    }
+
+    .logo h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .logo h1 span {
+      color: var(--verde);
+    }
+
+    .logo p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    }
+
+    .card-titulo {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitulo {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    /* Campos */
+    .campo {
+      margin-bottom: 18px;
+    }
+
+    .campo label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .campo input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 13px 16px;
+      font-size: 15px;
+      color: var(--texto);
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .campo input:focus {
+      border-color: var(--verde);
+      box-shadow: 0 0 0 3px var(--verde-glow);
+    }
+
+    .campo input::placeholder {
+      color: rgba(255,255,255,0.2);
+    }
+
+    /* Botão */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      margin-top: 8px;
+      box-shadow: 0 4px 20px rgba(0,194,113,0.25);
+    }
+
+    .btn:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,194,113,0.35); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Spinner */
+    .btn .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn.loading .btn-text { display: none; }
+    .btn.loading .spinner { display: block; }
+
+    /* Mensagem de erro */
+    .erro-msg {
+      display: none;
+      background: rgba(255,92,92,0.1);
+      border: 1px solid rgba(255,92,92,0.25);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 13px;
+      color: var(--erro);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .erro-msg.visivel { display: block; animation: fadeUp 0.3s ease; }
+
+    /* Rodapé */
+    .rodape {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .rodape strong {
+      color: var(--verde);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <div class="logo-mark">
+      <!-- Ícone de voto/check -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Chapa<span>Vote</span></h1>
+    <p>Plataforma de sondagem eleitoral</p>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">Acesso do Cooperado</div>
+    <div class="card-subtitulo">Use as credenciais enviadas por email</div>
+
+    <div class="erro-msg" id="erroMsg">Email ou senha incorretos. Tente novamente.</div>
+
+    <div class="campo">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="seu@email.com.br" autocomplete="email" />
+    </div>
+
+    <div class="campo">
+      <label>Senha</label>
+      <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn" id="btnEntrar" onclick="entrar()">
+      <span class="btn-text">Entrar</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <div class="rodape">
+    Problemas de acesso? Fale com o <strong>administrador da eleição</strong>
+  </div>
+</div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ============================================================
+  // CONFIGURAÇÃO — substitua pelos dados do seu projeto Supabase
+  // Acesse: supabase.com → seu projeto → Settings → API
+  // ============================================================
+  const SUPABASE_URL  = 'https://xgpnhlvgdcdlmsqzlbvc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncG5obHZnZGNkbG1zcXpsYnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTMyMjMsImV4cCI6MjA5MDM2OTIyM30.5I7nPUbSDKmjt-AqZb_gc4YV5_sndb5e5b0LA5XlW1E';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // Permite login com Enter
+  document.getElementById('senha').addEventListener('keydown', e => {
+    if (e.key === 'Enter') entrar();
+  });
+
+  async function entrar() {
+    const email = document.getElementById('email').value.trim();
+    const senha = document.getElementById('senha').value;
+    const btn   = document.getElementById('btnEntrar');
+    const erro  = document.getElementById('erroMsg');
+
+    if (!email || !senha) {
+      mostrarErro('Preencha email e senha.');
+      return;
+    }
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    erro.classList.remove('visivel');
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+
+    if (error) {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      mostrarErro('Email ou senha incorretos. Tente novamente.');
+      return;
+    }
+
+    // Verifica o role do usuário na tabela cooperados
+    const { data: cooperado } = await sb
+      .from('cooperados')
+      .select('role, ativo')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!cooperado || !cooperado.ativo) {
+      await sb.auth.signOut();
+      mostrarErro('Sua conta está inativa. Fale com o administrador.');
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      return;
+    }
+
+    // Redireciona conforme o role
+    if (cooperado.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'voto.html';
+    }
+  }
+
+  function mostrarErro(msg) {
+    const el = document.getElementById('erroMsg');
+    el.textContent = msg;
+    el.classList.add('visivel');
+  }
+
+  // Se já logado, redireciona direto
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      sb.from('cooperados').select('role').eq('id', session.user.id).single()
+        .then(({ data }) => {
+          if (data?.role === 'admin') window.location.href = 'admin.html';
+          else window.location.href = 'voto.html';
+        });
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChapaVote — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde:        #00C271;
+      --verde-escuro: #009958;
+      --verde-glow:   rgba(0,194,113,0.12);
+      --vermelho:     #FF4C4C;
+      --amarelo:      #FFB800;
+      --bg:           #060C12;
+      --sidebar:      #080E16;
+      --card:         #0C1720;
+      --borda:        rgba(255,255,255,0.06);
+      --texto:        #DCE8E0;
+      --muted:        #4A6A58;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--texto); min-height: 100vh; display: flex; }
+
+    .sidebar {
+      width: 220px; background: var(--sidebar); border-right: 1px solid var(--borda);
+      display: flex; flex-direction: column; padding: 24px 0;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 20;
+    }
+
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 10px; padding: 0 20px 28px;
+      border-bottom: 1px solid var(--borda); font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 600; color: var(--verde); text-decoration: none; white-space: nowrap; letter-spacing: 0.5px;
+    }
+
+    .sidebar-logo span { color: var(--verde); }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 16px; height: 16px; }
+
+    nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 2px; }
+
+    .nav-label {
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px; padding: 8px 8px 4px; margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: 8px; font-size: 13px; color: var(--muted);
+      transition: all 0.15s; text-decoration: none;
+    }
+
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--texto); }
+    .nav-item.ativo { background: var(--verde-glow); color: var(--verde); }
+    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .sidebar-bottom { padding: 16px 12px; border-top: 1px solid var(--borda); }
+
+    .admin-badge {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+      background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px;
+    }
+
+    .admin-avatar {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+
+    .admin-info { flex: 1; min-width: 0; }
+    .admin-nome { font-size: 12px; font-weight: 500; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .admin-role { font-size: 10px; color: var(--verde); }
+
+    .btn-sair {
+      width: 100%; background: transparent; border: 1px solid var(--borda);
+      border-radius: 7px; color: var(--muted); font-size: 12px; padding: 8px;
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+
+    .btn-sair:hover { color: var(--texto); background: rgba(255,255,255,0.04); }
+
+    .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; border-bottom: 1px solid var(--borda);
+      background: rgba(6,12,18,0.9); backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    .topbar-esq { display: flex; flex-direction: column; gap: 3px; }
+    .topbar-titulo { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 700; color: #fff; }
+    .topbar-sub { display: none; }
+
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,194,113,0.1); border: 1px solid rgba(0,194,113,0.2);
+      border-radius: 100px; padding: 6px 14px; font-size: 12px; color: var(--verde); font-weight: 500;
+    }
+
+    .live-dot { width: 7px; height: 7px; background: var(--verde); border-radius: 50%; animation: pulse 1.5s ease infinite; }
+    @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.8); } }
+
+    .content { padding: 28px 32px 60px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 14px; }
+
+    .kpi-card {
+      background: var(--card); border: 1px solid var(--borda);
+      border-radius: 16px; padding: 22px 24px; position: relative; overflow: hidden;
+    }
+
+    .kpi-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; border-radius: 16px 16px 0 0;
+    }
+
+    .kpi-card.total::after    { background: linear-gradient(90deg, var(--verde), transparent); }
+    .kpi-card.nosso::after    { background: var(--verde); }
+    .kpi-card.oposicao::after { background: var(--vermelho); }
+    .kpi-card.indeciso::after { background: var(--amarelo); }
+
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+    .kpi-num { font-family: 'Inter', sans-serif; font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -1px; margin-bottom: 6px; }
+
+    .kpi-card.total    .kpi-num { color: #fff; }
+    .kpi-card.nosso    .kpi-num { color: var(--verde); }
+    .kpi-card.oposicao .kpi-num { color: var(--vermelho); }
+    .kpi-card.indeciso .kpi-num { color: var(--amarelo); }
+
+    .kpi-meta { display: flex; align-items: center; gap: 6px; }
+    .kpi-pct { font-size: 14px; font-weight: 700; }
+    .kpi-card.total    .kpi-pct { color: var(--verde); }
+    .kpi-card.nosso    .kpi-pct { color: var(--verde); }
+    .kpi-card.oposicao .kpi-pct { color: var(--vermelho); }
+    .kpi-card.indeciso .kpi-pct { color: var(--amarelo); }
+    .kpi-desc { font-size: 12px; color: var(--muted); }
+
+    .participacao-track { margin-top: 14px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 100px; overflow: hidden; }
+    .participacao-fill { height: 100%; background: linear-gradient(90deg, var(--verde), var(--verde-escuro)); border-radius: 100px; transition: width 1s ease; }
+
+    /* CARDS */
+    .secoes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .secao-card { background: var(--card); border: 1px solid var(--borda); border-radius: 16px; padding: 24px 28px; }
+    .secao-card.full { grid-column: 1 / -1; }
+
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .card-titulo { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #fff; }
+    .card-subtitulo { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .semana-pill { background: rgba(255,255,255,0.05); border: 1px solid var(--borda); border-radius: 100px; padding: 4px 12px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    .barra-master { height: 20px; border-radius: 100px; overflow: hidden; display: flex; gap: 2px; margin-bottom: 16px; }
+    .bm-nosso    { background: var(--verde);   border-radius: 100px 0 0 100px; transition: width 1s ease; min-width:0; }
+    .bm-oposicao { background: var(--vermelho); transition: width 1s ease; min-width:0; }
+    .bm-indeciso { background: var(--amarelo);  border-radius: 0 100px 100px 0; transition: width 1s ease; min-width:0; }
+
+    .barra-legenda { display: flex; gap: 20px; }
+    .leg-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+    .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .leg-val { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15px; color: var(--texto); margin-left: 2px; }
+
+    .grafico-evolucao { position: relative; height: 200px; }
+
+    .barras-lista { display: flex; flex-direction: column; gap: 14px; }
+    .barra-row { display: flex; flex-direction: column; gap: 6px; }
+    .barra-row-header { display: flex; justify-content: space-between; align-items: center; }
+    .barra-row-nome { font-size: 13px; color: var(--texto); font-weight: 500; }
+    .barra-row-vals { font-size: 11px; color: var(--muted); }
+    .barra-row-track { height: 8px; background: rgba(255,255,255,0.04); border-radius: 100px; overflow: hidden; display: flex; gap: 1px; }
+    .br-n { background: var(--verde);   border-radius: 100px 0 0 100px; transition: width 0.8s ease; }
+    .br-o { background: var(--vermelho); transition: width 0.8s ease; }
+    .br-i { background: var(--amarelo);  border-radius: 0 100px 100px 0; transition: width 0.8s ease; }
+
+    /* TABELA */
+    .tabela-card { background: var(--card); border: 1px solid var(--borda); border-radius: 16px; overflow: hidden; }
+    .tabela-header { padding: 20px 28px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--borda); }
+
+    .busca-input {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--borda); border-radius: 8px;
+      padding: 8px 14px; font-size: 13px; color: var(--texto); font-family: 'Inter', sans-serif;
+      outline: none; width: 220px; transition: border-color 0.2s;
+    }
+
+    .busca-input:focus { border-color: var(--verde); }
+    .busca-input::placeholder { color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      padding: 10px 24px; text-align: left; font-size: 10px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+      background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--borda);
+    }
+
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody td { padding: 12px 24px; font-size: 13px; }
+
+    .td-nome { font-weight: 500; color: var(--texto); }
+    .td-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .voto-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 100px; font-size: 12px; font-weight: 600; }
+    .voto-badge.Nosso    { background: rgba(0,194,113,0.12); color: var(--verde); }
+    .voto-badge.Oposição { background: rgba(255,76,76,0.12);  color: var(--vermelho); }
+    .voto-badge.Indeciso { background: rgba(255,184,0,0.12);  color: var(--amarelo); }
+
+    .semana-badge { font-size: 11px; color: var(--muted); background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px; }
+
+    .empty { text-align: center; padding: 48px; color: var(--muted); font-size: 13px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid rgba(0,194,113,0.15); border-top-color: var(--verde); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HAMBURGER */
+    .hamburger {
+      display: none;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--borda);
+      border-radius: 8px;
+      color: var(--texto);
+      padding: 7px;
+      cursor: pointer;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 15;
+    }
+
+    .overlay.visivel { display: block; }
+
+    @media (max-width: 768px) {
+      .hamburger { display: flex; }
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 25;
+      }
+
+      .sidebar.aberta { transform: translateX(0); }
+
+      .main { margin-left: 0; }
+
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+
+      .secoes-grid { grid-template-columns: 1fr; }
+
+      .secao-card.full { grid-column: 1; }
+
+      .content { padding: 20px 16px 40px; }
+
+      .topbar { padding: 14px 16px; }
+
+      .tabela-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .busca-input { width: 100%; }
+
+      table { font-size: 11px; }
+      thead th, tbody td { padding: 8px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a class="sidebar-logo" href="admin.html">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    ChapaVote
+  </a>
+  <nav>
+    <div class="nav-label">Painel</div>
+    <a class="nav-item ativo" href="admin.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <div class="nav-label">Dados</div>
+    <a class="nav-item" href="cooperados.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Cooperados
+    </a>
+    <a class="nav-item" href="importar.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="admin-badge">
+      <div class="admin-avatar" id="adminAvatar">A</div>
+      <div class="admin-info">
+        <div class="admin-nome" id="adminNome">Admin</div>
+        <div class="admin-role">Administrador</div>
+      </div>
+    </div>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+</aside>
+<div class="overlay" id="overlay" onclick="fecharMenu()"></div>
+
+<div class="main">
+  <div class="topbar" id="topbar">
+    <div class="topbar-esq">
+      <div class="topbar-titulo" id="topbarTitulo">Dashboard</div>
+      <div class="topbar-sub" id="topbarSub">Carregando...</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="live-badge"><div class="live-dot"></div> Tempo real</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="kpi-grid">
+      <div class="kpi-card total">
+        <div class="kpi-label">Participação total</div>
+        <div class="kpi-num" id="kpiTotal">0</div>
+        <div class="kpi-meta">
+          <span class="kpi-pct" id="kpiParticipacaoPct">0%</span>
+          <span class="kpi-desc" id="kpiTotalDesc">do eleitorado respondeu</span>
+        </div>
+        <div class="participacao-track">
+          <div class="participacao-fill" id="participacaoFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="kpi-card nosso">
+        <div class="kpi-label">Nosso</div>
+        <div class="kpi-num" id="kpiNosso">0</div>
+        <div class="kpi-meta">
+          <span class="kpi-pct" id="kpiNossoPct">0%</span>
+          <span class="kpi-desc">dos votos</span>
+        </div>
+      </div>
+      <div class="kpi-card oposicao">
+        <div class="kpi-label">Oposição</div>
+        <div class="kpi-num" id="kpiOposicao">0</div>
+        <div class="kpi-meta">
+          <span class="kpi-pct" id="kpiOposicaoPct">0%</span>
+          <span class="kpi-desc">dos votos</span>
+        </div>
+      </div>
+      <div class="kpi-card indeciso">
+        <div class="kpi-label">Indeciso</div>
+        <div class="kpi-num" id="kpiIndeciso">0</div>
+        <div class="kpi-meta">
+          <span class="kpi-pct" id="kpiIndecisoPct">0%</span>
+          <span class="kpi-desc">dos votos</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="secoes-grid">
+      <div class="secao-card">
+        <div class="card-header">
+          <div>
+            <div class="card-titulo">Distribuição dos votos</div>
+            <div class="card-subtitulo">Semana atual</div>
+          </div>
+          <div class="semana-pill" id="semanaLabel">—</div>
+        </div>
+        <div class="barra-master">
+          <div class="bm-nosso"    id="bmNosso"    style="width:0%"></div>
+          <div class="bm-oposicao" id="bmOposicao" style="width:0%"></div>
+          <div class="bm-indeciso" id="bmIndeciso" style="width:0%"></div>
+        </div>
+        <div class="barra-legenda">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--verde)"></div> Nosso <span class="leg-val" id="legNosso">0</span></div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--vermelho)"></div> Oposição <span class="leg-val" id="legOposicao">0</span></div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--amarelo)"></div> Indeciso <span class="leg-val" id="legIndeciso">0</span></div>
+        </div>
+      </div>
+
+      <div class="secao-card">
+        <div class="card-header">
+          <div>
+            <div class="card-titulo">Evolução semanal</div>
+            <div class="card-subtitulo">Histórico de votos por semana</div>
+          </div>
+        </div>
+        <div class="grafico-evolucao">
+          <canvas id="graficoEvolucao"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="secoes-grid">
+      <div class="secao-card">
+        <div class="card-header"><div><div class="card-titulo">Por Cidade</div><div class="card-subtitulo">Distribuição geográfica</div></div></div>
+        <div class="barras-lista" id="graficoCidade"><div class="spinner"></div></div>
+      </div>
+      <div class="secao-card">
+        <div class="card-header"><div><div class="card-titulo">Por Especialidade</div><div class="card-subtitulo">Top especialidades</div></div></div>
+        <div class="barras-lista" id="graficoEspecialidade"><div class="spinner"></div></div>
+      </div>
+      <div class="secao-card full">
+        <div class="card-header"><div><div class="card-titulo">Por Local de Atuação</div><div class="card-subtitulo">Hospitais e clínicas</div></div></div>
+        <div class="barras-lista" id="graficoLocal"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="tabela-card">
+      <div class="tabela-header">
+        <div>
+          <div class="card-titulo">Votos individuais</div>
+          <div class="card-subtitulo">Registro detalhado por cooperado</div>
+        </div>
+        <input class="busca-input" type="text" placeholder="Buscar cooperado..." oninput="filtrarTabela(this.value)" />
+      </div>
+      <div id="tabelaContainer"><div class="spinner"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL  = 'https://xgpnhlvgdcdlmsqzlbvc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncG5obHZnZGNkbG1zcXpsYnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTMyMjMsImV4cCI6MjA5MDM2OTIyM30.5I7nPUbSDKmjt-AqZb_gc4YV5_sndb5e5b0LA5XlW1E';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  let eleicaoAtiva = null;
+  let todosVotos = [];
+  let totalCooperados = 0;
+  let graficoChart = null;
+
+  function semanaAtual() {
+    const d = new Date();
+    const start = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+    return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+  }
+
+  function pct(n, total) { return total > 0 ? Math.round((n/total)*100) : 0; }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    const { data: coop } = await sb.from('cooperados').select('nome, role').eq('id', session.user.id).single();
+    if (!coop || coop.role !== 'admin') { window.location.href = 'voto.html'; return; }
+
+    document.getElementById('adminNome').textContent = coop.nome;
+    document.getElementById('adminAvatar').textContent = coop.nome.charAt(0).toUpperCase();
+
+    const { count } = await sb.from('cooperados').select('id', { count: 'exact', head: true }).eq('role', 'cooperado');
+    totalCooperados = count || 0;
+
+    const { data: eleicoes } = await sb.from('eleicoes').select('*').eq('ativa', true).limit(1);
+    if (!eleicoes || eleicoes.length === 0) {
+      document.getElementById('topbarTitulo').textContent = 'Nenhuma eleição ativa';
+      document.getElementById('topbarSub').textContent = '';
+      return;
+    }
+
+    eleicaoAtiva = eleicoes[0];
+    document.getElementById('topbarTitulo').textContent = eleicaoAtiva.nome;
+    // data removida
+    document.getElementById('semanaLabel').textContent = semanaAtual();
+
+    await Promise.all([carregarPlacar(), carregarGraficos(), carregarTabela(), carregarEvolucao()]);
+
+    sb.channel('admin-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votos' }, async () => {
+        await Promise.all([carregarPlacar(), carregarGraficos(), carregarTabela(), carregarEvolucao()]);
+      })
+      .subscribe();
+  }
+
+  async function carregarPlacar() {
+    const { data } = await sb.from('placar_geral').select('opcao, total').eq('eleicao_id', eleicaoAtiva.id);
+
+    let n = 0, o = 0, i = 0;
+    if (data) data.forEach(r => {
+      if (r.opcao === 'Nosso')    n = parseInt(r.total);
+      if (r.opcao === 'Oposição') o = parseInt(r.total);
+      if (r.opcao === 'Indeciso') i = parseInt(r.total);
+    });
+
+    const total = n + o + i;
+    const partPct = pct(total, totalCooperados);
+
+    document.getElementById('kpiTotal').textContent            = total.toLocaleString('pt-BR');
+    document.getElementById('kpiParticipacaoPct').textContent  = partPct + '%';
+    document.getElementById('kpiTotalDesc').textContent        = `de ${totalCooperados.toLocaleString('pt-BR')} cooperados`;
+    document.getElementById('participacaoFill').style.width    = partPct + '%';
+    document.getElementById('kpiNosso').textContent            = n.toLocaleString('pt-BR');
+    document.getElementById('kpiOposicao').textContent         = o.toLocaleString('pt-BR');
+    document.getElementById('kpiIndeciso').textContent         = i.toLocaleString('pt-BR');
+    document.getElementById('kpiNossoPct').textContent         = pct(n,total) + '%';
+    document.getElementById('kpiOposicaoPct').textContent      = pct(o,total) + '%';
+    document.getElementById('kpiIndecisoPct').textContent      = pct(i,total) + '%';
+    document.getElementById('bmNosso').style.width             = pct(n,total) + '%';
+    document.getElementById('bmOposicao').style.width          = pct(o,total) + '%';
+    document.getElementById('bmIndeciso').style.width          = pct(i,total) + '%';
+    document.getElementById('legNosso').textContent            = n.toLocaleString('pt-BR');
+    document.getElementById('legOposicao').textContent         = o.toLocaleString('pt-BR');
+    document.getElementById('legIndeciso').textContent         = i.toLocaleString('pt-BR');
+  }
+
+  async function carregarEvolucao() {
+    const { data } = await sb.from('votos').select('semana, opcao').eq('eleicao_id', eleicaoAtiva.id).order('semana');
+
+    if (!data || !data.length) return;
+
+    const semanas = [...new Set(data.map(v => v.semana))].sort();
+    const nossoData    = semanas.map(s => data.filter(v => v.semana === s && v.opcao === 'Nosso').length);
+    const oposicaoData = semanas.map(s => data.filter(v => v.semana === s && v.opcao === 'Oposição').length);
+    const indecisaData = semanas.map(s => data.filter(v => v.semana === s && v.opcao === 'Indeciso').length);
+
+    const ctx = document.getElementById('graficoEvolucao').getContext('2d');
+    if (graficoChart) graficoChart.destroy();
+
+    graficoChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: semanas,
+        datasets: [
+          { label: 'Nosso',    data: nossoData,    borderColor: '#00C271', backgroundColor: 'rgba(0,194,113,0.1)',  borderWidth: 2, pointBackgroundColor: '#00C271', pointRadius: 4, tension: 0.4, fill: true },
+          { label: 'Oposição', data: oposicaoData, borderColor: '#FF4C4C', backgroundColor: 'rgba(255,76,76,0.08)', borderWidth: 2, pointBackgroundColor: '#FF4C4C', pointRadius: 4, tension: 0.4, fill: true },
+          { label: 'Indeciso', data: indecisaData, borderColor: '#FFB800', backgroundColor: 'rgba(255,184,0,0.08)', borderWidth: 2, pointBackgroundColor: '#FFB800', pointRadius: 4, tension: 0.4, fill: true }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#4A6A58', font: { size: 11 }, boxWidth: 10 } } },
+        scales: {
+          x: { ticks: { color: '#4A6A58', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#4A6A58', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  async function carregarGraficos() {
+    const [cidade, esp, local] = await Promise.all([
+      sb.from('placar_por_cidade').select('cidade,opcao,total').eq('eleicao_id', eleicaoAtiva.id),
+      sb.from('placar_por_especialidade').select('especialidade,opcao,total').eq('eleicao_id', eleicaoAtiva.id),
+      sb.from('placar_por_local').select('local_atuacao,opcao,total').eq('eleicao_id', eleicaoAtiva.id)
+    ]);
+
+    renderGrafico('graficoCidade',        'cidade',        cidade.data || []);
+    renderGrafico('graficoEspecialidade', 'especialidade', esp.data || []);
+    renderGrafico('graficoLocal',         'local_atuacao', local.data || []);
+  }
+
+  function renderGrafico(elId, campo, dados) {
+    const el = document.getElementById(elId);
+    if (!dados.length) { el.innerHTML = '<div class="empty">Nenhum dado ainda</div>'; return; }
+
+    const grupos = {};
+    dados.forEach(r => {
+      const cat = r[campo] || 'Não informado';
+      if (!grupos[cat]) grupos[cat] = { Nosso: 0, 'Oposição': 0, Indeciso: 0 };
+      grupos[cat][r.opcao] = parseInt(r.total);
+    });
+
+    const ordenado = Object.entries(grupos).sort((a,b) => {
+      return (b[1].Nosso + b[1]['Oposição'] + b[1].Indeciso) - (a[1].Nosso + a[1]['Oposição'] + a[1].Indeciso);
+    });
+
+    el.innerHTML = ordenado.map(([cat, vals]) => {
+      const total = vals.Nosso + vals['Oposição'] + vals.Indeciso;
+      const pN = pct(vals.Nosso, total), pO = pct(vals['Oposição'], total), pI = pct(vals.Indeciso, total);
+      return `
+        <div class="barra-row">
+          <div class="barra-row-header">
+            <span class="barra-row-nome">${cat}</span>
+            <span class="barra-row-vals">${vals.Nosso}N · ${vals['Oposição']}O · ${vals.Indeciso}I</span>
+          </div>
+          <div class="barra-row-track">
+            <div class="br-n" style="width:${pN}%"></div>
+            <div class="br-o" style="width:${pO}%"></div>
+            <div class="br-i" style="width:${pI}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function carregarTabela() {
+    const { data } = await sb.from('votos_individuais').select('*').eq('eleicao_id', eleicaoAtiva.id);
+    todosVotos = data || [];
+    renderTabela(todosVotos);
+  }
+
+  function renderTabela(votos) {
+    const el = document.getElementById('tabelaContainer');
+    if (!votos.length) { el.innerHTML = '<div class="empty">Nenhum voto registrado ainda.</div>'; return; }
+
+    el.innerHTML = `
+      <table>
+        <thead><tr><th>Cooperado</th><th>Cidade</th><th>Especialidade</th><th>Local de atuação</th><th>Voto</th><th>Semana</th></tr></thead>
+        <tbody>
+          ${votos.map(v => `
+            <tr>
+              <td><div class="td-nome">${v.cooperado}</div><div class="td-sub">${v.email}</div></td>
+              <td style="font-size:12px;">${v.cidade || '—'}</td>
+              <td style="font-size:12px;">${v.especialidade || '—'}</td>
+              <td style="font-size:12px;">${v.local_atuacao || '—'}</td>
+              <td><span class="voto-badge ${v.opcao}">${v.opcao}</span></td>
+              <td><span class="semana-badge">${v.semana}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function filtrarTabela(busca) {
+    const b = busca.toLowerCase();
+    renderTabela(todosVotos.filter(v =>
+      v.cooperado?.toLowerCase().includes(b) || v.email?.toLowerCase().includes(b) ||
+      v.cidade?.toLowerCase().includes(b) || v.especialidade?.toLowerCase().includes(b)
+    ));
+  }
+
+  async function sair() { await sb.auth.signOut(); window.location.href = 'login.html'; }
+
+  init();
+
+  function toggleMenu() {
+    document.getElementById('sidebar') ? null : null;
+    document.querySelector('.sidebar').classList.toggle('aberta');
+    document.getElementById('overlay').classList.toggle('visivel');
+  }
+
+  function fecharMenu() {
+    document.querySelector('.sidebar').classList.remove('aberta');
+    document.getElementById('overlay').classList.remove('visivel');
+  }
+</script>
+</body>
+</html>

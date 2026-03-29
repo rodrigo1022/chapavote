@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChapaVote — Meu Voto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde:        #00C271;
+      --verde-escuro: #009958;
+      --verde-glow:   rgba(0,194,113,0.15);
+      --vermelho:     #FF4C4C;
+      --vermelho-bg:  rgba(255,76,76,0.08);
+      --amarelo:      #FFB800;
+      --amarelo-bg:   rgba(255,184,0,0.08);
+      --bg:           #080E14;
+      --card:         #0E1A24;
+      --card2:        #111F2C;
+      --borda:        rgba(255,255,255,0.07);
+      --texto:        #E8F0EC;
+      --muted:        #5A7A6A;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--texto);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,194,113,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--borda);
+      position: sticky;
+      top: 0;
+      background: rgba(8,14,20,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--verde);
+    }
+
+    .logo span { color: var(--verde); }
+
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 18px; height: 18px; }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .user-name {
+      color: var(--texto);
+      font-weight: 500;
+    }
+
+    .btn-sair {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--borda);
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-sair:hover { color: var(--texto); background: rgba(255,255,255,0.08); }
+
+    /* MAIN */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ESTADO DE CARREGAMENTO */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 80px;
+      color: var(--muted);
+    }
+
+    .spinner-lg {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(0,194,113,0.15);
+      border-top-color: var(--verde);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ELEIÇÃO INFO */
+    .eleicao-badge {
+      background: var(--verde-glow);
+      border: 1px solid rgba(0,194,113,0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--verde);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(22px, 4vw, 28px);
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      max-width: 520px;
+    }
+
+    .subtitulo {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 48px;
+      max-width: 440px;
+      line-height: 1.6;
+    }
+
+    /* CARDS DE VOTO */
+    .opcoes {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 48px;
+    }
+
+    .opcao-card {
+      background: var(--card);
+      border: 2px solid var(--borda);
+      border-radius: 16px;
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .opcao-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .opcao-card:hover { transform: translateY(-2px); }
+
+    .opcao-card.nosso:hover   { border-color: var(--verde);   box-shadow: 0 8px 30px rgba(0,194,113,0.15); }
+    .opcao-card.oposicao:hover { border-color: var(--vermelho); box-shadow: 0 8px 30px rgba(255,76,76,0.15); }
+    .opcao-card.indeciso:hover { border-color: var(--amarelo);  box-shadow: 0 8px 30px rgba(255,184,0,0.15); }
+
+    .opcao-card.selecionado.nosso    { border-color: var(--verde);   background: rgba(0,194,113,0.06); }
+    .opcao-card.selecionado.oposicao { border-color: var(--vermelho); background: rgba(255,76,76,0.06); }
+    .opcao-card.selecionado.indeciso { border-color: var(--amarelo);  background: rgba(255,184,0,0.06); }
+
+    .opcao-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .nosso   .opcao-icon { background: rgba(0,194,113,0.12); }
+    .oposicao .opcao-icon { background: rgba(255,76,76,0.12); }
+    .indeciso .opcao-icon { background: rgba(255,184,0,0.12); }
+
+    .opcao-texto { flex: 1; }
+
+    .opcao-titulo {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .nosso    .opcao-titulo { color: var(--verde); }
+    .oposicao .opcao-titulo { color: var(--vermelho); }
+    .indeciso .opcao-titulo { color: var(--amarelo); }
+
+    .opcao-desc {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .check-circle {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--borda);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .selecionado.nosso    .check-circle { background: var(--verde);   border-color: var(--verde); }
+    .selecionado.oposicao .check-circle { background: var(--vermelho); border-color: var(--vermelho); }
+    .selecionado.indeciso .check-circle { background: var(--amarelo);  border-color: var(--amarelo); }
+
+    .check-circle svg { display: none; width: 14px; height: 14px; }
+    .selecionado .check-circle svg { display: block; }
+
+    /* BOTÃO CONFIRMAR */
+    .btn-confirmar {
+      width: 100%;
+      max-width: 480px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 24px rgba(0,194,113,0.25);
+      display: none;
+    }
+
+    .btn-confirmar.visivel { display: block; animation: fadeUp 0.3s ease; }
+    .btn-confirmar:hover   { opacity: 0.92; transform: translateY(-1px); }
+    .btn-confirmar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* PLACAR GERAL */
+    .placar-section {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 48px;
+    }
+
+    .placar-titulo {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .placar-card {
+      background: var(--card);
+      border: 1px solid var(--borda);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .placar-total {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .placar-total .numero {
+      font-family: 'Inter', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--verde);
+    }
+
+    .placar-total .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .barra-container {
+      display: flex;
+      gap: 3px;
+      height: 10px;
+      border-radius: 100px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .barra-nosso    { background: var(--verde);   border-radius: 100px 0 0 100px; transition: width 0.8s ease; }
+    .barra-oposicao { background: var(--vermelho); transition: width 0.8s ease; }
+    .barra-indeciso { background: var(--amarelo);  border-radius: 0 100px 100px 0; transition: width 0.8s ease; }
+
+    .placar-itens {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .placar-item {
+      text-align: center;
+    }
+
+    .placar-item .pi-num {
+      font-family: 'Inter', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .placar-item .pi-pct {
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 2px;
+    }
+
+    .placar-item .pi-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .nosso-cor    { color: var(--verde); }
+    .oposicao-cor { color: var(--vermelho); }
+    .indeciso-cor { color: var(--amarelo); }
+
+    /* JÁ VOTOU */
+    .ja-votou-banner {
+      background: var(--verde-glow);
+      border: 1px solid rgba(0,194,113,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--verde);
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 24px;
+    }
+
+    .ja-votou-banner svg { flex-shrink: 0; }
+
+    /* TELA DE SUCESSO */
+    .sucesso-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8,14,20,0.95);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .sucesso-overlay.visivel { display: flex; }
+
+    .sucesso-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 60px rgba(0,194,113,0.3);
+      animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); }
+      to   { transform: scale(1); }
+    }
+
+    .sucesso-overlay h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      animation: fadeUp 0.4s ease 0.3s both;
+    }
+
+    .sucesso-overlay p {
+      font-size: 14px;
+      color: var(--muted);
+      animation: fadeUp 0.4s ease 0.4s both;
+    }
+
+    .sucesso-overlay .btn-ok {
+      margin-top: 8px;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, var(--verde), var(--verde-escuro));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      animation: fadeUp 0.4s ease 0.5s both;
+    }
+
+    /* MOBILE */
+    @media (max-width: 600px) {
+      header {
+        padding: 14px 16px;
+      }
+
+      .user-name {
+        display: none;
+      }
+
+      main {
+        padding: 32px 16px 60px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .subtitulo {
+        font-size: 13px;
+        margin-bottom: 32px;
+      }
+
+      .opcao-card {
+        padding: 18px 16px;
+        gap: 14px;
+      }
+
+      .opcao-icon {
+        width: 40px; height: 40px;
+        font-size: 18px;
+      }
+
+      .opcao-titulo { font-size: 15px; }
+
+      .btn-confirmar {
+        padding: 14px;
+        font-size: 15px;
+      }
+
+      .placar-card {
+        padding: 20px 16px;
+      }
+
+      .placar-total .numero {
+        font-size: 30px;
+      }
+
+      .placar-itens {
+        gap: 8px;
+      }
+
+      .placar-item .pi-num {
+        font-size: 20px;
+      }
+
+      .ja-votou-banner {
+        font-size: 13px;
+        padding: 14px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    ChapaVote
+  </div>
+  <div class="user-info">
+    <span class="user-name" id="nomeUsuario">...</span>
+    <button class="btn-sair" onclick="sair()">Sair</button>
+  </div>
+</header>
+
+<main>
+  <!-- Loading -->
+  <div class="loading-state" id="loadingState">
+    <div class="spinner-lg"></div>
+    <span>Carregando...</span>
+  </div>
+
+  <!-- Conteúdo principal (escondido até carregar) -->
+  <div id="conteudo" style="display:none; width:100%; display:none; flex-direction:column; align-items:center;">
+
+    <div class="eleicao-badge" id="eleicaoBadge">Eleição em andamento</div>
+
+    <h1 id="tituloEleicao">Qual é a sua posição?</h1>
+    <p class="subtitulo">Sua resposta é confidencial. Registre sua posição atual em relação à chapa.</p>
+
+    <!-- Banner já votou esta semana -->
+    <div class="ja-votou-banner" id="jaVotouBanner" style="display:none;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span>Você já registrou seu voto esta semana. Poderá atualizar na próxima semana.</span>
+    </div>
+
+    <!-- Opções de voto -->
+    <div class="opcoes" id="opcoesVoto">
+      <div class="opcao-card nosso" onclick="selecionar('Nosso', this)">
+        <div class="opcao-icon">🤝</div>
+        <div class="opcao-texto">
+          <div class="opcao-titulo">Nosso</div>
+          <div class="opcao-desc">Apoio à nossa chapa</div>
+        </div>
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="opcao-card oposicao" onclick="selecionar('Oposição', this)">
+        <div class="opcao-icon">⚔️</div>
+        <div class="opcao-texto">
+          <div class="opcao-titulo">Oposição</div>
+          <div class="opcao-desc">Apoio à chapa adversária</div>
+        </div>
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="opcao-card indeciso" onclick="selecionar('Indeciso', this)">
+        <div class="opcao-icon">🤔</div>
+        <div class="opcao-texto">
+          <div class="opcao-titulo">Indeciso</div>
+          <div class="opcao-desc">Ainda não defini minha posição</div>
+        </div>
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarVoto()">
+      Confirmar minha posição
+    </button>
+
+    <!-- Placar geral -->
+    <div class="placar-section">
+      <div class="placar-titulo">Placar geral da sondagem</div>
+      <div class="placar-card">
+        <div class="placar-total">
+          <div class="numero" id="totalVotos">0</div>
+          <div class="label">cooperados já responderam</div>
+        </div>
+        <div class="barra-container">
+          <div class="barra-nosso"    id="barraNosso"    style="width:0%"></div>
+          <div class="barra-oposicao" id="barraOposicao" style="width:0%"></div>
+          <div class="barra-indeciso" id="barraIndeciso" style="width:0%"></div>
+        </div>
+        <div class="placar-itens">
+          <div class="placar-item">
+            <div class="pi-num nosso-cor" id="numNosso">0</div>
+            <div class="pi-label">Nosso</div>
+          </div>
+          <div class="placar-item">
+            <div class="pi-num oposicao-cor" id="numOposicao">0</div>
+            <div class="pi-label">Oposição</div>
+          </div>
+          <div class="placar-item">
+            <div class="pi-num indeciso-cor" id="numIndeciso">0</div>
+            <div class="pi-label">Indeciso</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Overlay de sucesso -->
+<div class="sucesso-overlay" id="sucessoOverlay">
+  <div class="sucesso-icon">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+  <h2>Voto registrado!</h2>
+  <p>Sua posição foi salva com sucesso.</p>
+  <button class="btn-ok" onclick="fecharSucesso()">Ver placar</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL  = 'https://xgpnhlvgdcdlmsqzlbvc.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncG5obHZnZGNkbG1zcXpsYnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTMyMjMsImV4cCI6MjA5MDM2OTIyM30.5I7nPUbSDKmjt-AqZb_gc4YV5_sndb5e5b0LA5XlW1E';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  let opcaoSelecionada = null;
+  let eleicaoAtiva = null;
+  let jaVotouEstaSemana = false;
+  let userId = null;
+
+  function semanaAtual() {
+    const d = new Date();
+    const start = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+    return `${d.getFullYear()}-W${String(week).padStart(2,'0')}`;
+  }
+
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; return; }
+
+    userId = session.user.id;
+
+    // Verifica se é admin (redireciona)
+    const { data: coop } = await sb.from('cooperados').select('nome, role').eq('id', userId).single();
+    if (!coop) { sair(); return; }
+    if (coop.role === 'admin') { window.location.href = 'admin.html'; return; }
+
+    document.getElementById('nomeUsuario').textContent = coop.nome;
+
+    // Busca eleição ativa
+    const { data: eleicoes } = await sb.from('eleicoes').select('*').eq('ativa', true).limit(1);
+    if (!eleicoes || eleicoes.length === 0) {
+      document.getElementById('loadingState').innerHTML = '<p style="color:var(--muted)">Nenhuma eleição ativa no momento.</p>';
+      return;
+    }
+
+    eleicaoAtiva = eleicoes[0];
+    document.getElementById('eleicaoBadge').textContent = eleicaoAtiva.nome;
+    document.getElementById('tituloEleicao').textContent = 'Qual é a sua posição?';
+
+    // Verifica se já votou esta semana
+    const semana = semanaAtual();
+    const { data: votoExistente } = await sb.from('votos')
+      .select('opcao')
+      .eq('cooperado_id', userId)
+      .eq('eleicao_id', eleicaoAtiva.id)
+      .eq('semana', semana)
+      .single();
+
+    if (votoExistente) {
+      jaVotouEstaSemana = true;
+      document.getElementById('jaVotouBanner').style.display = 'flex';
+      // Marca visualmente o voto atual
+      const cards = document.querySelectorAll('.opcao-card');
+      cards.forEach(c => {
+        const titulo = c.querySelector('.opcao-titulo').textContent;
+        if (titulo === votoExistente.opcao) {
+          c.classList.add('selecionado');
+        }
+        c.style.pointerEvents = 'none';
+        c.style.opacity = '0.7';
+      });
+    }
+
+    // Carrega placar
+    await carregarPlacar();
+
+    // Realtime
+    sb.channel('votos-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votos' }, carregarPlacar)
+      .subscribe();
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('conteudo').style.display = 'flex';
+  }
+
+  async function carregarPlacar() {
+    if (!eleicaoAtiva) return;
+    const { data } = await sb.from('placar_geral')
+      .select('opcao, total')
+      .eq('eleicao_id', eleicaoAtiva.id);
+
+    let nosso = 0, oposicao = 0, indeciso = 0;
+    if (data) {
+      data.forEach(r => {
+        if (r.opcao === 'Nosso')    nosso    = r.total;
+        if (r.opcao === 'Oposição') oposicao = r.total;
+        if (r.opcao === 'Indeciso') indeciso = r.total;
+      });
+    }
+
+    const total = nosso + oposicao + indeciso;
+    const pct = (n) => total > 0 ? Math.round((n/total)*100) : 0;
+
+    document.getElementById('totalVotos').textContent   = total;
+    document.getElementById('numNosso').textContent     = nosso;
+    document.getElementById('numOposicao').textContent  = oposicao;
+    document.getElementById('numIndeciso').textContent  = indeciso;
+    document.getElementById('barraNosso').style.width    = pct(nosso)    + '%';
+    document.getElementById('barraOposicao').style.width = pct(oposicao) + '%';
+    document.getElementById('barraIndeciso').style.width = pct(indeciso) + '%';
+  }
+
+  function selecionar(opcao, card) {
+    if (jaVotouEstaSemana) return;
+    opcaoSelecionada = opcao;
+    document.querySelectorAll('.opcao-card').forEach(c => c.classList.remove('selecionado'));
+    card.classList.add('selecionado');
+    document.getElementById('btnConfirmar').classList.add('visivel');
+  }
+
+  async function confirmarVoto() {
+    if (!opcaoSelecionada || jaVotouEstaSemana) return;
+    const btn = document.getElementById('btnConfirmar');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+
+    const { error } = await sb.from('votos').insert({
+      cooperado_id: userId,
+      eleicao_id:   eleicaoAtiva.id,
+      opcao:        opcaoSelecionada,
+      semana:       semanaAtual()
+    });
+
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar minha posição';
+      alert('Erro ao registrar voto. Tente novamente.');
+      return;
+    }
+
+    document.getElementById('sucessoOverlay').classList.add('visivel');
+  }
+
+  function fecharSucesso() {
+    document.getElementById('sucessoOverlay').classList.remove('visivel');
+    window.location.reload();
+  }
+
+  async function sair() {
+    await sb.auth.signOut();
+    window.location.href = 'login.html';
+  }
+
+  init();
+</script>
+</body>
+</html>
